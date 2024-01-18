@@ -1,9 +1,3 @@
-#!/bin/bash
-
-# Check if a package name was provided
-if [ -z "$1" ]; then
-    echo "Please provide a package name."
-    exit 1
 fi
 
 # The package to be installed
@@ -11,6 +5,13 @@ install_me=$1
 
 # Update package lists
 sudo apt-get update
+
+# If the package to be installed is Visual Studio Code, add the repository
+if [ "$install_me" = "code" ]; then
+    wget -q https://packages.microsoft.com/keys/microsoft.asc -O- | sudo apt-key add -
+    sudo add-apt-repository "deb [arch=amd64] https://packages.microsoft.com/repos/vscode stable main"
+    sudo apt-get update
+fi
 
 # Install apt-rdepends if not already installed
 if ! command -v apt-rdepends &> /dev/null; then
