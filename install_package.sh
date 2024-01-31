@@ -32,7 +32,7 @@ dependencies=$(apt-rdepends $install_package | grep -v "^ ")
 # Download the package and all its dependencies
 for package in $dependencies; do
     sudo apt-get install --download-only -y $package
-    cp /var/cache/apt/archives/$package*.deb packages/
+    cp /var/cache/apt/archives/$package*.deb ./packages/$package.deb
 done
 
 # Create an ISO file from the downloaded packages
