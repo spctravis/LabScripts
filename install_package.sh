@@ -15,7 +15,7 @@ fi
 # If the package to be installed is sysmonforlinux, add the repository
 if [ "$install_package" = "sysmonforlinux" ]; then
     wget -q https://packages.microsoft.com/config/ubuntu/$(lsb_release -rs)/packages-microsoft-prod.deb -O ./packages/packages-microsoft-prod.deb
-    wget -q https://raw.githubusercontent.com/Neo23x0/sysmon-config/master/sysmonconfig-export.xml -O ./packages/sysmonconfig.xml
+    wget -q https://raw.githubusercontent.com/microsoft/MSTIC-Sysmon/main/linux/configs/main.xml -O ./packages/sysmonconfig.xml
 fi
 
 # Update package lists
@@ -29,14 +29,20 @@ fi
 # List all dependencies of the package
 dependencies=$(apt-rdepends $install_package | grep -v "^ ")
 
+# Move the existing packages to a backup directory
+mv /var/cache/apt/archives/*.deb /var/cache/apt/archives/backup/
+
 # Download the package and all its dependencies
 for package in $dependencies; do
-    sudo apt-get install --download-only -y $package
-    cp /var/cache/apt/archives/$package*.deb ./packages/$package.deb
+    sudo apt-get install --download-only -y $package 
 done
 
-# Create an ISO file from the downloaded packages
-genisoimage -o ${install_package}.iso packages/
+# Move the downloaded packages to the packages directory
+mv /var/cache/apt/archives/*.deb ./packages/
 
-# Clean up
-rm -r packages
+# move the backup packages back to the archives directory
+mv /var/cache/apt/archives/backup/* /var/cache/apt/archives/
+
+# Install the package
+echo "This is the command to install the packages:"
+echo "sudo dpkg -i ./packages/*.deb"
