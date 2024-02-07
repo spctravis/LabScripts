@@ -1,0 +1,101 @@
+sysmonforlinux
+  Depends: libc6 (>= 2.14)
+  Depends: libgcc1 (>= 1:3.0)
+  Depends: libssl-dev
+  Depends: libstdc++6 (>= 5)
+  Depends: libxml2 (>= 2.7.4)
+  Depends: sysinternalsebpf (>= 1.2.0)
+libc6
+  Depends: libcrypt1 (>= 1:4.4.10-10ubuntu4)
+  Depends: libgcc-s1
+libcrypt1
+  Depends: libc6 (>= 2.25)
+libgcc-s1
+  Depends: gcc-12-base (= 12.3.0-1ubuntu1~22.04)
+  Depends: libc6 (>= 2.35)
+gcc-12-base
+libgcc1
+libssl-dev
+  Depends: libssl3 (= 3.0.2-0ubuntu1.14)
+libssl3
+  Depends: debconf (>= 0.5)
+  Depends: debconf-2.0
+  Depends: libc6 (>= 2.34)
+debconf
+  PreDepends: perl-base (>= 5.20.1-3~)
+perl-base
+  PreDepends: dpkg (>= 1.17.17)
+  PreDepends: libc6 (>= 2.35)
+  PreDepends: libcrypt1 (>= 1:4.1.0)
+dpkg
+  Depends: tar (>= 1.28-1)
+  PreDepends: libbz2-1.0
+  PreDepends: libc6 (>= 2.34)
+  PreDepends: liblzma5 (>= 5.2.2)
+  PreDepends: libselinux1 (>= 3.1~)
+  PreDepends: libzstd1 (>= 1.4.0)
+  PreDepends: zlib1g (>= 1:1.1.4)
+tar
+  PreDepends: libacl1 (>= 2.2.23)
+  PreDepends: libc6 (>= 2.34)
+  PreDepends: libselinux1 (>= 3.1~)
+libacl1
+  Depends: libc6 (>= 2.33)
+libselinux1
+  Depends: libc6 (>= 2.34)
+  Depends: libpcre2-8-0 (>= 10.22)
+libpcre2-8-0
+  Depends: libc6 (>= 2.14)
+libbz2-1.0
+  Depends: libc6 (>= 2.4)
+liblzma5
+  Depends: libc6 (>= 2.34)
+libzstd1
+  Depends: libc6 (>= 2.14)
+zlib1g
+  Depends: libc6 (>= 2.14)
+debconf-2.0
+libstdc++6
+  Depends: gcc-12-base (= 12.3.0-1ubuntu1~22.04)
+  Depends: libc6 (>= 2.34)
+  Depends: libgcc-s1 (>= 4.2)
+libxml2
+  Depends: libc6 (>= 2.34)
+  Depends: libicu70 (>= 70.1-1~)
+  Depends: liblzma5 (>= 5.1.1alpha+20120614)
+  Depends: zlib1g (>= 1:1.2.3.3)
+libicu70
+  Depends: libc6 (>= 2.34)
+  Depends: libgcc-s1 (>= 3.3.1)
+  Depends: libstdc++6 (>= 5.2)
+sysinternalsebpf
+  Depends: libc6 (>= 2.26)
+  Depends: libelf1 (>= 0.131)
+  Depends: libglib2.0-0 (>= 2.12.0)
+  Depends: libjson-glib-1.0-0 (>= 0.13.2)
+  Depends: zlib1g (>= 1:1.2.3.3)
+libelf1
+  Depends: libc6 (>= 2.33)
+  Depends: zlib1g (>= 1:1.1.4)
+libglib2.0-0
+  Depends: libc6 (>= 2.34)
+  Depends: libffi8 (>= 3.4)
+  Depends: libmount1 (>= 2.35.2-7~)
+  Depends: libpcre3
+  Depends: libselinux1 (>= 3.1~)
+  Depends: zlib1g (>= 1:1.2.2)
+libffi8
+  Depends: libc6 (>= 2.27)
+libmount1
+  Depends: libblkid1 (>= 2.17.2)
+  Depends: libc6 (>= 2.34)
+  Depends: libselinux1 (>= 3.1~)
+libblkid1
+  Depends: libc6 (>= 2.33)
+libpcre3
+  Depends: libc6 (>= 2.14)
+libjson-glib-1.0-0
+  Depends: libc6 (>= 2.4)
+  Depends: libglib2.0-0 (>= 2.55.2)
+  Depends: libjson-glib-1.0-common (>= 1.6.6-1build1)
+libjson-glib-1.0-common
