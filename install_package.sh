@@ -29,7 +29,6 @@ fi
 
 # List all dependencies of the package
 dependencies=$(apt-rdepends $install_package | awk '!/^ / {print $0} /^  Depends: / {print $2}' )
-echo dependencies
 
 # Make the backup directory
 mkdir -p /var/cache/apt/archives/backup/
@@ -39,7 +38,8 @@ mv /var/cache/apt/archives/*.deb /var/cache/apt/archives/backup/
 
 # Download the package and all its dependencies
 for package in $dependencies; do
-    sudo apt-get install --download-only -y $package 
+    sudo apt download $package 
+    mv $package*.deb ./packages/
 done
 
 # Move the downloaded packages to the packages directory
