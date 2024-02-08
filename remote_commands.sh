@@ -34,3 +34,6 @@ for hostname in "${hostnames[@]}"; do
         echo "Failed to run $(basename $local_file) on $hostname" >>$log_file
     fi
 done
+
+# echo log file
+cat $log_file
