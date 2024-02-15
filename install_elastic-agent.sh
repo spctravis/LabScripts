@@ -8,6 +8,7 @@ echo "Hostname: $(hostname)" >>$log_file
 
 # Install the Elastic Agent
 echo "Installing the Elastic Agent..."
+sudo chmod +x ./so-elastic-agent_linux_amd64d
 sudo ./so-elastic-agent_linux_amd64 2>>$log_file
 
 # Check if the install command was successful

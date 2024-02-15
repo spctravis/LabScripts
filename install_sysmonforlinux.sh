@@ -11,7 +11,8 @@ unzip -o ./packages.zip -d ./packages 2>>$log_file
 
 # Install the package
 echo "Installing the packages..."
-sudo dpkg -i ./packages/*.deb 2>>$log_file
+cd ./packages
+sudo dpkg -i *.deb 2>>$log_file
 
 # Check if the dpkg command was successful
 if [ $? -ne 0 ]; then
@@ -21,7 +22,7 @@ else
 fi
 
 # run sysmon install with the config file
-sudo ./packages/sysmon -i ./packages/sysmonconfig.xml
+sudo sysmon -i sysmonconfig.xml
 
 # wait for 5 seconds
 sleep 5
