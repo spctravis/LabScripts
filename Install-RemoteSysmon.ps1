@@ -5,8 +5,6 @@
 .DESCRIPTION
     The Install-RemoteSysmon function installs Sysmon on remote computers. It copies the Sysmon executable and configuration file from local paths to the remote computers, and then installs Sysmon on the remote computers. If Sysmon is already installed, it will not reinstall unless the -Force switch is used. The -UpdateConfig switch can be used to update the configuration file without reinstalling Sysmon.
 
-.PARAMETER ComputerName
-    The names of the computers where Sysmon should be installed.
 
 .PARAMETER SourceSysmonExe
     The local path of the Sysmon executable.
@@ -20,13 +18,14 @@
 .PARAMETER UpdateConfig
     Updates the configuration file without reinstalling Sysmon.
 
+.PARAMETER SMB
+    Use this switch to set the parameter for SMB. The path should be to a shared folder.
+
 .EXAMPLE
-    $(Get-Adcomputer -filter *).name | Install-RemoteSysmon -SourceSysmonExe "C:\path\to\sysmon.exe" -SourceConfig "C:\path\to\sysmonconfig.xml"
+    Install-RemoteSysmon -SourceSysmonExe "C:\path\to\sysmon.exe" -SourceConfig "C:\path\to\sysmonconfig.xml"
 #>
 function Install-RemoteSysmon {
     param (
-        [Parameter(Mandatory=$true, ValueFromPipeline=$true, HelpMessage="The names of the remote computers where Sysmon should be installed.")]
-        [string[]]$ComputerName,
 
         [Parameter(Mandatory=$true, HelpMessage="The local path of the Sysmon executable.")]
         [string]$SourceSysmonExe,
@@ -38,59 +37,86 @@ function Install-RemoteSysmon {
         [switch]$Force,
 
         [Parameter(HelpMessage="Updates the configuration file without reinstalling Sysmon.")]
-        [switch]$UpdateConfig
+        [switch]$UpdateConfig,
+
+        [Parameter(HelpMessage="The path to a shared folder.")]
+        [switch]$smbPath
     )
 
+    $SourceConfigPath = $ScourceConfig
+    $SourceConfig = Split-Path -Path $sourceConfig -Leaf
     $destFolder = "C:\Program Files\sysmon"
+    $destConfig = "$destFolder\$SourceConfig"
     $destSysmonExe = "$destFolder\sysmon.exe"
-    $destConfig = "$destFolder\sysmonconfig.xml"
+    $smbSysmonExe = "$smbPath\sysmon.exe"
+    $smbConfig = "$smbPath\$SourceConfig"
 
-    # Establish all PSSessions
-    foreach ($computer in $ComputerName) {
-        try {
-             New-PSSession -ComputerName $computer -ErrorAction Stop
-        } catch {
-            "Unable to establish PSSession with on $_" | Out-File -Append -FilePath "$env:USERPROFILE\Desktop\sysmon_install_error.txt"
-            return
-        }
-    }
-
-    # Get the PSSessions that were successfully established
+    # Check if there are established PSSessions if not break and tell the user to establish PSSessions
     $sessions = Get-PSSession
+    if ($sessions.Count -eq 0) {
+        Write-Host "No PSSessions found. Please establish PSSessions before running this function."
+        break
+    }
 
     # Check if Sysmon is installed on the remote machines
     Invoke-Command -Session $sessions -ScriptBlock {
-        if (Get-Service -Name "Sysmon" -and !$using:Force -and !$using:UpdateConfig) {
-            "Sysmon is already installed on $env:COMPUTERNAME"
-            return
+        # if using force switch create the destination folder
+        if ($using:Force) {
+            New-Item -ItemType Directory -Path $using:destFolder -Force
         }
-
-        # Create the destination folder
-        New-Item -ItemType Directory -Path $using:destFolder -Force
+        # Create the destination folder if the folder does not exist
+        if (!(Test-Path $using:destFolder)) {
+            New-Item -ItemType Directory -Path $using:destFolder -Force
+        }
+        
     } -AsJob
+
+    # Wait for the jobs to complete
+    Get-Job | Wait-Job
 
     # Copy the Sysmon executable and configuration file to the remote machines
     if (!$UpdateConfig) {
-        $sessions | ForEach-Object {
-            Copy-Item -Path $SourceSysmonExe -Destination $destSysmonExe -ToSession $_ -ErrorAction Stop
+        foreach($session in $sessions) {
+            # If smbPath switch is used copy the files from the smbPath
+            if ($smbPath) {
+                Copy-Item -Path $smbSysmonExe -Destination $destFolder -ToSession $session 
+                Copy-Item -Path $smbConfig -Destination $destFolder -ToSession $session 
+            }
+            else {
+                Copy-Item -Path $SourceSysmonExe -Destination $destFolder -ToSession $session 
+                Copy-Item -Path $SourceConfigPath -Destination $destFolder -ToSession $session 
+            }
         }
     }
-    $sessions | ForEach-Object {
-        Copy-Item -Path $SourceConfig -Destination $destConfig -ToSession $_ -ErrorAction Stop
+
+    # If the -UpdateConfig switch is used, copy the configuration file to the remote machines
+    if ($UpdateConfig) {
+        foreach($session in $sessions) {
+            # If smbPath switch is used copy the files from the smbPath
+            if ($smbPath) {
+                Copy-Item -Path $smbConfig -Destination $destFolder -ToSession $session -Force
+            }
+            else {
+                Copy-Item -Path $SourceConfigPath -Destination $destFolder -ToSession $session -Force
+            }
+        }
     }
 
-    # Check if Sysmon is installed on the remote machines
-    Invoke-Command -Session $sessions -ScriptBlock {
-        if (!$using:UpdateConfig) {
+    # If UpdateConfig switch is used, update the configuration file on the remote machines
+    if (!$UpdateConfig) {
+        # Install Sysmon on the remote machines
+        Invoke-Command -Session $sessions -ScriptBlock {
+            & $using:destSysmonExe -accepteula -i $using:destConfig 
+        } -AsJob -ErrorAction SilentlyContinue
+    }
 
-            # Install Sysmon on the remote machine
-            Start-Process -FilePath $using:destSysmonExe -ArgumentList "-accepteula -i $using:destConfig" -Wait -NoNewWindow -ErrorAction Stop
-        }
-        if ($using:UpdateConfig) {
-            # Update the Sysmon configuration file on the remote machine
-            Start-Process -FilePath $using:destSysmonExe -ArgumentList "-c $using:destConfig" -Wait -NoNewWindow -ErrorAction Stop
-        }
-    } -AsJob
+    # If UpdateConfig switch is used, update the configuration file on the remote machines
+    if ($UpdateConfig) {
+        # Update the Sysmon configuration file on the remote machines
+        Invoke-Command -Session $sessions -ScriptBlock {
+            & $using:destSysmonExe -c $using:destConfig 
+        } -AsJob -ErrorAction SilentlyContinue
+    }
  
     # Wait for the jobs to complete
     Get-Job | Wait-Job
@@ -106,11 +132,15 @@ function Install-RemoteSysmon {
                 Start-Service -Name "Sysmon" -ErrorAction Stop
                 "Sysmon service started on $env:COMPUTERNAME"
             } catch {
-                "Failed to start Sysmon service on $env:COMPUTERNAME: $_" | Out-File -Append -FilePath "$env:USERPROFILE\Desktop\sysmon_install_error.txt"
+                "Failed to perform action on $($_.TargetObject): $($_.Exception.Message)"
             }
         }
-    }
+    } -AsJob
 
-    # Remove the PSSessions
-    $sessions | Remove-PSSession
-}
+    Get-Job | Wait-Job
+    # Write the error message from the job to a log file
+    Get-Job | Receive-Job -Keep | Out-File -Append -FilePath "$env:USERPROFILE\Desktop\Sysmon_errorlog.txt"
+    # Remove the job
+    Get-Job | Remove-Job
+
+} # End of Install-RemoteSysmon function
