@@ -45,16 +45,17 @@ function Install-RemoteElasticAgent {
 
     # Check if Elastic Agent is installed on the remote machines
     Invoke-Command -Session $sessions -ScriptBlock {
-        if (Get-Service -Name "elastic-agent" -and !$using:Force) {
-            "Elastic Agent is already installed on $env:COMPUTERNAME"
-            return
-        }
+
         # if using force switch create the destination folder
         if ($using:Force) {
             New-Item -ItemType Directory -Path $using:destFolder -Force
         }
+        elseif (Get-Service -Name "elastic-agent") {
+            "Elastic Agent is already installed on $env:COMPUTERNAME"
+            return
+        }
         # Create the destination folder if the folder does not exist
-        if (!(Test-Path $using:destFolder)) {
+        elseif (!(Test-Path $using:destFolder)) {
             New-Item -ItemType Directory -Path $using:destFolder -Force
         }
 
@@ -65,36 +66,42 @@ function Install-RemoteElasticAgent {
     # Copy the Elastic Agent executable to the remote machine
     foreach($session in $sessions) {
         # Test if the path is aleady created or the force switch is used
-        if (!Get-Service -Name "elastic-agent" -and !$using:Force){
-            if($using:smbPath){
+        if ($(Get-Service -Name "elastic-agent").Status -ne "Running"){
+            if($smbPath){
                 Copy-Item -Path $smbElasticAgent -Destination $destFolder -ToSession $session 
             } else {
-                Copy-Item -Path $SourceElasticAgent -Destination $destFolder -ToSession $session 
+                Copy-Item -Path $SourceElasticAgentExe -Destination $destFolder -ToSession $session 
                 }
             }
         
-        if ($using:Force){
-            if($using:smbPath){
+        if ($Force){
+            if($smbPath){
                 Copy-Item -Path $smbElasticAgent -Destination $destFolder -ToSession $session -Force
             } else {
-                Copy-Item -Path $SourceElasticAgent -Destination $destFolder -ToSession $session -Force
+                Copy-Item -Path $SourceElasticAgentExe -Destination $destFolder -ToSession $session -Force
                 }
             }    
         } 
 
     Get-Job | Wait-Job
-
-    # Check if Elastic Agent is installed on the remote machines
-    Invoke-Command -Session $sessions -ScriptBlock {
-       # Install Elastic Agent on the remote machine if it's not already installed or if force parameter is used
-
-        if (!Get-Service -Name "elastic-agent") {
+    
+    # If using force switch start the Elastic Agent installation
+    if ($Force) {
+        Invoke-Command -Session $sessions -ScriptBlock {
             Start-Process -FilePath $using:destElasticAgent -Wait -NoNewWindow 
-        }
-        if ($using:Force) {
-            Start-Process -FilePath $using:destElasticAgent -Wait -NoNewWindow 
-        }
-    } -AsJob    
+        } -AsJob
+    }
+    # else
+    else {
+        # Check if Elastic Agent is installed on the remote machines
+        Invoke-Command -Session $sessions -ScriptBlock {
+           # Install Elastic Agent on the remote machine if it's not already installed or if force parameter is used
+
+            if ($(Get-Service -Name "elastic-agent").Status -ne "Running") {
+                Start-Process -FilePath $using:destElasticAgent -Wait -NoNewWindow 
+            }
+        } -AsJob
+    } 
 
     # Wait for the jobs to complete
     Get-Job | Wait-Job
