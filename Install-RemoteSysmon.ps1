@@ -106,7 +106,7 @@ function Install-RemoteSysmon {
     if (!$UpdateConfig) {
         # Install Sysmon on the remote machines
         Invoke-Command -Session $sessions -ScriptBlock {
-            & $using:destSysmonExe -accepteula -i $using:destConfig
+            & $using:destSysmonExe -accepteula -i $using:destConfig 
         } -AsJob -ErrorAction SilentlyContinue
     }
 
@@ -114,7 +114,7 @@ function Install-RemoteSysmon {
     if ($UpdateConfig) {
         # Update the Sysmon configuration file on the remote machines
         Invoke-Command -Session $sessions -ScriptBlock {
-            & $using:destSysmonExe -c $using:destConfig 
+            Start-Process $using:destSysmonExe -ArgumentList "-c $using:destConfig" 
         } -AsJob -ErrorAction SilentlyContinue
     }
  
