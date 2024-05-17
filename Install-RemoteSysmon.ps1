@@ -43,7 +43,7 @@ function Install-RemoteSysmon {
         [switch]$smbPath
     )
 
-    $SourceConfigPath = $ScourceConfig
+    $SourceConfigPath = $SourceConfig
     $SourceConfig = Split-Path -Path $sourceConfig -Leaf
     $destFolder = "C:\Program Files\sysmon"
     $destConfig = "$destFolder\$SourceConfig"
@@ -106,7 +106,7 @@ function Install-RemoteSysmon {
     if (!$UpdateConfig) {
         # Install Sysmon on the remote machines
         Invoke-Command -Session $sessions -ScriptBlock {
-            & $using:destSysmonExe -accepteula -i $using:destConfig 
+            & $using:destSysmonExe -accepteula -i $using:destConfig
         } -AsJob -ErrorAction SilentlyContinue
     }
 
@@ -129,8 +129,9 @@ function Install-RemoteSysmon {
         } else {
             try {
                 # If the service is not running, start it
-                Start-Service -Name "Sysmon" -ErrorAction Stop
-                "Sysmon service started on $env:COMPUTERNAME"
+                & $using:destSysmonExe -u force 
+                Start-Sleep -Seconds 20
+                & $using:destSysmonExe -accepteula -i $using:destConfig
             } catch {
                 "Failed to perform action on $($_.TargetObject): $($_.Exception.Message)"
             }
